@@ -1,0 +1,8 @@
+- hosts: all
+  vars:
+    consul_is_ui: true
+    consul_is_server: true
+  roles:
+    - common
+    - docker.ubuntu
+    - consul
