@@ -2,9 +2,9 @@ __author__ = 'al3x'
 
 import logging
 import sys
-import os
 import time
 import pprint
+import socket
 import SoftLayer
 from ansible import inventory, runner, constants, playbook, callbacks, utils
 
@@ -76,19 +76,20 @@ def wait_for_instances(instances):
         for inst in instances:
             id = inst['id']
             instance = vs.get_instance(id)
-            status[id] = True if instance['powerState']['name'] == 'Running' else False
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ip = instance.get('primaryIpAddress', None)
+            if ip:
+                result = sock.connect_ex((instance['primaryIpAddress'], 22))
+                status[id] = True if result == 0 else False
+            else:
+                status[id] = False
         all_running = all(status.values())
         time.sleep(10)
 
-def apply_playbook(instances):
+def provision_machines(instances, extra_vars={}):
     vs_ips = [instance['primaryIpAddress'] for instance in instances]
     ansible_inventory = inventory.Inventory(vs_ips)
     constants.HOST_KEY_CHECKING = False
-    ansible_ping = runner.Runner(
-        remote_user='root', pattern='*', forks=3,
-        inventory=ansible_inventory,
-        is_playbook=True,
-    )
     stats = callbacks.AggregateStats()
     playbook_cb = callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
     runner_cb = callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
@@ -96,16 +97,34 @@ def apply_playbook(instances):
         playbook='ansible-provision/consul_workshop.yml',
         stats=stats, callbacks=playbook_cb, runner_callbacks=runner_cb,
         remote_user='root', forks=3,
-        inventory=ansible_inventory)
+        inventory=ansible_inventory, extra_vars=extra_vars)
     logging.info(PrettyLog(ansible_playbook.run()))
 
+def join_consul_cluster(instances):
+    logging.info(instances)
+    vs_ips = [instance['primaryIpAddress'] for instance in instances]
+    ansible_inventory = inventory.Inventory(vs_ips)
+    constants.HOST_KEY_CHECKING = False
+    ansible_runner = runner.Runner(
+        remote_user='root', pattern='*', forks=3,
+        inventory=ansible_inventory,
+        module_name='command', module_args='/opt/consul/bin/consul join -rpc-addr=172.17.42.1:8400 {}'.format(vs_ips[0])
+    )
+    logging.info(PrettyLog(ansible_runner.run()))
+
 key = add_key(SSH_KEY, USER)
-create_instances(hosts, USER, key)
-while len(get_instances(USER)) != len(hosts):
-   logging.info('Waiting for instances to be provisioned')
-   time.sleep(10)
+# create_instances(hosts, USER, key)
+# while len(get_instances(USER)) != len(hosts):
+#    logging.info('Waiting for instances to be provisioned')
+#    time.sleep(10)
+
 instances = get_instances(USER)
+
 logging.info(PrettyLog(instances))
-wait_for_instances(instances)
-#delete_instances(instances)
-apply_playbook(instances)
+# wait_for_instances(instances)
+# instances = get_instances(USER)
+# provision_machines(instances[:1], extra_vars={'consul_bootstrap': True})
+#provision_machines(instances[1:])
+#join_consul_cluster(instances)
+
+delete_instances(instances)
