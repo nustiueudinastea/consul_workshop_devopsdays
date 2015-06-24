@@ -15,12 +15,13 @@ logger.addHandler(sh)
 logger.setLevel(logging.INFO)
 
 class ClusterManager:
-    def __init__(self, id, ttl):
+    def __init__(self, id, ttl, election=False):
         self.name = NAME
         self.id = self.name + str(id)
         self.ttl = ttl
         self.check_id = 'service:' + self.id
         self.master = None
+        self.election = election
         self.client = Consul(host='172.17.42.1')
 
     def register(self):
@@ -65,8 +66,9 @@ class ClusterManager:
             try:
                 logger.debug('Updating service check ttl for {}'.format(self.check_id))
                 self.client.agent.check.ttl_pass(check_id=self.check_id)
-                if self.master:
-                    self.check_master()
+                if self.election:
+                    if self.master:
+                        self.check_master()
                 time.sleep(5)
             except KeyboardInterrupt:
                 self.deregister()
@@ -75,8 +77,10 @@ class ClusterManager:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Starts {} service'.format(NAME))
     parser.add_argument('--id', help='Service ID', type=int, required=True)
+    parser.add_argument('--election', help='Option to enable leader elect', default=False, type=bool)
     args = parser.parse_args()
-    cm = ClusterManager(args.id, 10)
+    cm = ClusterManager(args.id, 10, election=args.election)
     cm.register()
-    cm.set_mode()
+    if args.election:
+        cm.set_mode()
     cm.pass_check()
