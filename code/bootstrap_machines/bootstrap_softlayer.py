@@ -1,7 +1,8 @@
-__author__ = 'al3x'
+#!/usr/bin/env python2.7
 
 import logging
 import sys
+import os
 import time
 import pprint
 import socket
@@ -13,8 +14,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 SL_USERNAME = ''
 SL_API_KEY = ''
 USER = ''
-DATACENTER = 'ams01'
 SSH_KEY = ''
+DATACENTER = 'ams01'
 hosts = ['host1', 'host2', 'host3']
 
 class PrettyLog():
@@ -94,7 +95,7 @@ def provision_machines(instances, extra_vars={}):
     playbook_cb = callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
     runner_cb = callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
     ansible_playbook = playbook.PlayBook(
-        playbook='../../ansible-provision/consul_workshop.yml',
+        playbook= os.path.dirname(os.path.realpath(__file__)) + '/../../ansible-provision/consul_workshop.yml',
         stats=stats, callbacks=playbook_cb, runner_callbacks=runner_cb,
         remote_user='root', forks=3,
         inventory=ansible_inventory, extra_vars=extra_vars)
