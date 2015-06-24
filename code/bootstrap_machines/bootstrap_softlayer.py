@@ -94,7 +94,7 @@ def provision_machines(instances, extra_vars={}):
     playbook_cb = callbacks.PlaybookCallbacks(verbose=utils.VERBOSITY)
     runner_cb = callbacks.PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
     ansible_playbook = playbook.PlayBook(
-        playbook='ansible-provision/consul_workshop.yml',
+        playbook='../../ansible-provision/consul_workshop.yml',
         stats=stats, callbacks=playbook_cb, runner_callbacks=runner_cb,
         remote_user='root', forks=3,
         inventory=ansible_inventory, extra_vars=extra_vars)
@@ -113,18 +113,18 @@ def join_consul_cluster(instances):
     logging.info(PrettyLog(ansible_runner.run()))
 
 key = add_key(SSH_KEY, USER)
-# create_instances(hosts, USER, key)
-# while len(get_instances(USER)) != len(hosts):
-#    logging.info('Waiting for instances to be provisioned')
-#    time.sleep(10)
+create_instances(hosts, USER, key)
+while len(get_instances(USER)) != len(hosts):
+    logging.info('Waiting for instances to be provisioned')
+    time.sleep(10)
 
 instances = get_instances(USER)
 
 logging.info(PrettyLog(instances))
-# wait_for_instances(instances)
-# instances = get_instances(USER)
-# provision_machines(instances[:1], extra_vars={'consul_bootstrap': True})
-#provision_machines(instances[1:])
-#join_consul_cluster(instances)
+wait_for_instances(instances)
+instances = get_instances(USER)
+provision_machines(instances[:1], extra_vars={'consul_bootstrap': True})
+provision_machines(instances[1:])
+join_consul_cluster(instances)
 
-delete_instances(instances)
+#delete_instances(instances)
