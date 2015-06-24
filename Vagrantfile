@@ -4,7 +4,9 @@ Vagrant.configure('2') do |config|
   config.vm.box = 'ubuntu/trusty64'
 
   config.ssh.forward_agent = true
-  config.vm.synced_folder 'code', '/code'
+  config.vm.synced_folder './', '/vagrant'
+
+  config.vm.network :private_network, ip: "192.168.33.99"
 
   config.vm.provider :virtualbox do |vb|
     vb.customize ['modifyvm', :id, '--memory', '1024']
