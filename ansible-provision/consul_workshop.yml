@@ -2,8 +2,11 @@
   vars:
     consul_is_ui: true
     consul_is_server: true
-    consul_install_consulate: true
     consul_client_address: "172.17.42.1"
+    consul_install_dnsmasq: false
+    consul_user: root
+    consul_group: root
+    consul_client_rpc_addr: "172.17.42.1:8400"
   roles:
     - common
     - docker.ubuntu
