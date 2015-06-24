@@ -1,0 +1,2 @@
+ansible==1.9.1
+SoftLayer==4.0.3
