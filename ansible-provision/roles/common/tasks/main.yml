@@ -2,3 +2,5 @@
 
 - name: "Replace apt mirror"
   replace: dest=/etc/apt/sources.list regexp='mirrors.service.networklayer.com' replace='ubuntu.mirror.cambrium.nl' backup=yes
+- name: "Install VIM"
+  apt: update_cache=yes name=vim state=present
